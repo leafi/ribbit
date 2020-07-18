@@ -1,8 +1,7 @@
 /* eslint-env browser */
+import '@exampledev/new.css'
 import './variables.css'
 import './global.css'
-import './people.css'
-import './fonts.css'
 // import { h, render } from 'preact'
 import { recreateStore } from './store'
 // import App from './components/App'
