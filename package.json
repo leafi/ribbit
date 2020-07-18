@@ -1,0 +1,55 @@
+{
+  "name": "ribbit",
+  "version": "0.1.0",
+  "description": "The 5th best web rpg engine",
+  "license": "MIT",
+  "private": true,
+  "devDependencies": {
+    "@poi/plugin-bundle-report": "^12.1.2",
+    "@poi/plugin-eslint": "^12.1.0",
+    "autoprefixer": "^9.8.5",
+    "eslint": "^7.4.0",
+    "eslint-config-standard": "^14.1.1",
+    "eslint-plugin-import": "^2.22.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^4.0.1",
+    "husky": "^4.2.5",
+    "lint-staged": "^10.2.11",
+    "poi": "^12.9.0",
+    "prettier-standard": "^16.4.1",
+    "stylelint": "^13.6.1",
+    "stylelint-config-standard": "^20.0.0"
+  },
+  "dependencies": {
+    "html-escaper": "^3.0.0",
+    "lodash": "^4.17.19",
+    "lz4js": "^0.2.0",
+    "preact": "^10.4.6",
+    "twgl.js": "^4.15.2",
+    "unistore": "^3.5.2"
+  },
+  "engines": {
+    "node": ">=12"
+  },
+  "eslintIgnore": [
+    "build/*",
+    ".cache/",
+    "dist/*.js",
+    "node_modules/"
+  ],
+  "lint-staged": {
+    "linters": {
+      "src/**/*.{js,jsx}": [
+        "prettier-standard --lint"
+      ]
+    }
+  },
+  "scripts": {
+    "build": "poi --prod",
+    "bundlereport": "poi --prod --bundle-report",
+    "dev": "poi --serve",
+    "lint": "prettier-standard --check src/*.js src/**/*.js ; eslint src ; stylelint src/*.css src/**/*.css",
+    "lintw": "prettier-standard src/*.js src/**/*.js ; eslint --fix src ; stylelint --fix src/*.css src/**/*.css"
+  }
+}

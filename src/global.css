@@ -1,0 +1,100 @@
+body {
+  background-color: #202020;
+  color: #999;
+  font-family: 'PT Serif', serif;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: #888;
+  font-family: 'Noto Sans', 'Open Sans', Arial, Helvetica, sans-serif;
+  line-height: normal;
+  margin-left: -1rem;
+  padding-bottom: 0.5rem;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid rgba(102, 102, 102, 0.5);
+  margin-top: 2.25rem;
+  margin-bottom: 2rem;
+  margin-left: 5rem;
+  margin-right: 21rem;
+}
+
+a {
+  color: #7e6cb6;
+}
+
+.noulspace > a {
+  text-decoration: none;
+}
+
+.parapara {
+  line-height: 1.5em;
+  padding-left: 2rem;
+}
+
+.icon-enter {
+  padding-right: 3px;
+}
+
+.icon-leave,
+.icon-exit {
+  padding-left: 3px;
+}
+
+.noul {
+  text-decoration: none;
+}
+
+.ul {
+  text-decoration: underline;
+}
+
+.oldlink {
+  color: #94919e !important;
+  cursor: default !important;
+  font-weight: normal;
+}
+
+.tooltiplink {
+  border-bottom: 1px #7e6cb6 dashed;
+  cursor: help;
+  text-decoration: none;
+}
+
+.bloated {
+  font-weight: bold;
+}
+
+::-webkit-scrollbar {
+  width: 16px;
+  height: 16px;
+}
+
+::-webkit-scrollbar-track {
+  background: #383838;
+  border-radius: 50px;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 50px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #aaa;
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: #888;
+}
