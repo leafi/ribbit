@@ -1,16 +1,9 @@
 import { getStore } from '@/store'
 import { cloneArrayPush } from './cloneSet'
 
-export {
-  cloneArrayPush,
-  cloneSet,
-  cloneSetKV
-} from './cloneSet'
+export { cloneArrayPush, cloneSet, cloneSetKV } from './cloneSet'
 
-export {
-  writeSelector,
-  writeSelectorKV
-} from './writeSelectors'
+export { writeSelector, writeSelectorKV } from './writeSelectors'
 
 export function fatalError (error, outerMessage) {
   let err2
