@@ -1,95 +1,73 @@
 import lodashClone from 'lodash/clone'
 import { cloneSet, cloneSetCommon, cloneSetKV } from './cloneSet'
 
-// cloneSet but with a value function
-function cloneSetValueFn (source, path, valueFn, sendExtraValueFnArgs) {
+// cloneSet but with a value func
+function cloneSetFn (source, path, valueFn, selectorArgs) {
   return cloneSetCommon(source, path, (parent, lastPath) => {
-    let valueFn2ndArg
-    if (sendExtraValueFnArgs) {
-      valueFn2ndArg = {
-        path: source,
+    parent[lastPath] = valueFn(
+      {
+        path,
         source,
-        state: source
-      }
-    }
-
-    parent[lastPath] = valueFn(parent[lastPath], valueFn2ndArg)
+        state: source,
+        value: parent[lastPath]
+      },
+      ...selectorArgs
+    )
   })
 }
 
-// cloneSetKV but with a value function
-function cloneSetKValueFn (source, path, key, valueFn, sendExtraValueFnArgs) {
+// cloneSetKV but with a key func & a value func
+function cloneSetKVFn (source, path, keyFn, valueFn, selectorArgs) {
   return cloneSetCommon(source, path, (parent, lastPath) => {
     const lastObj = parent[lastPath] ? lodashClone(parent[lastPath]) : {}
 
-    let valueFn2ndArg
-    if (sendExtraValueFnArgs) {
-      valueFn2ndArg = {
-        container: lastObj,
-        key,
+    const key = keyFn(
+      {
+        container: parent[lastPath],
         path,
         source,
         state: source
-      }
-    }
+      },
+      ...selectorArgs
+    )
 
-    lastObj[key] = valueFn(parent[lastPath][key], valueFn2ndArg)
+    lastObj[key] = valueFn(
+      {
+        container: parent[lastPath],
+        key,
+        path,
+        source,
+        state: source,
+        value: parent[lastPath][key]
+      },
+      ...selectorArgs
+    )
+
     parent[lastPath] = lastObj
   })
 }
 
-export const writeSelector = (path, valOrValFn, opts) => {
-  if (valOrValFn && typeof valOrValFn === 'function') {
-    const valFnArgs = opts && opts.valFnArgs != null ? opts.valFnArgs : 1
-
-    if (valFnArgs < 1) {
-      const oldValFn = valOrValFn
-      valOrValFn = () => oldValFn()
-    }
-
-    return state => cloneSetValueFn(state, path, valOrValFn, valFnArgs > 1)
+export const writeSelector = (path, valueOrValueFn) => {
+  if (valueOrValueFn && typeof valueOrValueFn === 'function') {
+    return (state, ...selectorArgs) =>
+      cloneSetFn(state, path, valueOrValueFn, selectorArgs)
   }
-
-  return state => cloneSet(state, path, valOrValFn)
+  return state => cloneSet(state, path, valueOrValueFn)
 }
 
-export const writeSelectorKV = (path, keyOrKeyFn, valOrValFn, opts) => {
-  const isKeyFn = keyOrKeyFn && typeof keyOrKeyFn === 'function'
-  const isValFn = valOrValFn && typeof valOrValFn === 'function'
+export const writeSelectorKV = (path, keyOrKeyFn, valueOrValueFn) => {
+  const wasKeyFn = keyOrKeyFn && typeof keyOrKeyFn === 'function'
+  const wasValueFn = valueOrValueFn && typeof valueOrValueFn === 'function'
 
-  const keyFnArgs = opts && opts.keyFnArgs != null ? opts.keyFnArgs : 1
-  const valFnArgs = opts && opts.valFnArgs != null ? opts.valFnArgs : 1
-
-  let cloneSetKVFun = cloneSetKV
-
-  if (isValFn) {
-    cloneSetKVFun = cloneSetKValueFn
-
-    if (valFnArgs < 1) {
-      const oldValFn = valOrValFn
-      valOrValFn = () => oldValFn()
-    }
+  if (!wasKeyFn && !wasValueFn) {
+    // simple case
+    return state => cloneSetKV(state, path, keyOrKeyFn, valueOrValueFn)
   }
 
-  if (isKeyFn) {
-    if (keyFnArgs === 0) {
-      return state =>
-        cloneSetKVFun(state, path, keyOrKeyFn(), valOrValFn, valFnArgs > 1)
-    } else if (keyFnArgs === 1) {
-      return state =>
-        cloneSetKVFun(state, path, keyOrKeyFn(state), valOrValFn, valFnArgs > 1)
-    } else {
-      return state =>
-        cloneSetKVFun(
-          state,
-          path,
-          keyOrKeyFn(state, path),
-          valOrValFn,
-          valFnArgs > 1
-        )
-    }
-  } else {
-    return state =>
-      cloneSetKVFun(state, path, keyOrKeyFn, valOrValFn, valFnArgs > 1)
-  }
+  // force both to be functions
+  const keyFn = wasKeyFn ? keyOrKeyFn : () => keyOrKeyFn
+  const valueFn = wasValueFn ? valueOrValueFn : () => valueOrValueFn
+
+  return (state, ...selectorArgs) =>
+    cloneSetKVFn(state, path, keyFn, valueFn, selectorArgs)
 }
