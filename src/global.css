@@ -38,3 +38,30 @@
 ::-webkit-scrollbar-thumb:active {
   background: #888;
 }
+
+/* override 'body' defaults from xz/new.css */
+body {
+  margin: 0;
+  max-width: initial;
+  overflow: hidden;
+  padding: 0;
+}
+
+/* canvas #gfx */
+#gfx {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* div #app */
+#app {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}

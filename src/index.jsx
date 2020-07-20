@@ -9,6 +9,15 @@ import { recreateStore } from './store'
 
 console.log('Hi there!')
 
+const bodyTag = document.getElementsByTagName('body').item(0)
+// #app already exists in <body />
+const appDiv = document.getElementById('app')
+const gfxCanvas = document.createElement('canvas')
+gfxCanvas.id = 'gfx'
+bodyTag.insertBefore(gfxCanvas, appDiv)
+
+// existing #app div will be made a layer on top of #gfx by css
+
 recreateStore()
 
 // const divEl = document.getElementById('_mount_target')
@@ -17,4 +26,4 @@ recreateStore()
 // install 'Minim' non-default story
 // Minim()
 
-// render(<App />, document.getElementById('app'))
+// render(<App />, appDiv)
