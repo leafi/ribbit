@@ -1,8 +1,7 @@
 import lodashClone from 'lodash/clone'
 import lodashToPath from 'lodash/toPath'
-import { getStore } from '@/store'
 
-function cloneSetCommon (source, path, cb) {
+export function cloneSetCommon (source, path, cb) {
   const pathBits = lodashToPath(path)
   const newRoot = lodashClone(source)
   let x = newRoot
@@ -57,16 +56,4 @@ export function cloneArrayPush (source, path, pushValue) {
     arr.push(pushValue)
     parent[lastPath] = arr
   })
-}
-
-export function fatalError (error, outerMessage) {
-  let err2
-  if (outerMessage != null) {
-    console.error(`${outerMessage}\n`, error)
-    err2 = { _wrappedError: true, outerMessage, error }
-  } else {
-    console.error(error)
-    err2 = error
-  }
-  getStore().action(state => cloneArrayPush(state, 'view.fatalErrors', err2))()
 }
