@@ -57,6 +57,8 @@ const glData = {}
 
 const testRChunk = {}
 
+const reverseZMatrix = twgl.m4.scaling([1.0, 1.0, -1.0])
+
 async function _createTestRChunkTileIdTex (gl) {
   await new Promise(resolve => {
     // fake tile id texture
@@ -131,12 +133,14 @@ export async function _initTestRChunk (gl) {
   // set up uniforms
   testRChunk.uniforms = {
     // VS
-    uMVP: twgl.m4.ortho(0, 640, 400, 0, 1.0, 500.0),
-    uTileXYBase: [0.0, 0.0],
-    uDepth: 1.0,
-    uTileLengthDivSheetLength: TILES_PER_SHEET_LENGTH,
-    uInvTileLengthDivSheetLength: 1.0 / TILES_PER_SHEET_LENGTH,
-    uInvRChunkLengthInTiles: 1.0 / RCHUNK_LENGTH_IN_TILES,
+    uProjMtx: twgl.m4.identity(),
+    uShove: [0.0, 0.0, 1.0, 2.0], // (chunk pos x, chunk pos y, depth, scale)
+    uConstants: [
+      1.0 / TILES_PER_SHEET_LENGTH, // uInvTileLengthDivSheetLength
+      1.0 / RCHUNK_LENGTH_IN_TILES, // uInvRChunkLengthInTiles
+      0.0,
+      0.0
+    ],
     // VS (texture)
     uTileIDTex: testRChunk.tileIdTex,
     // FS (texture)
@@ -154,7 +158,9 @@ export function _rchunkRender (gl) {
   gl.clearColor(0.0, 1.0, 0.0, 1.0)
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-  testRChunk.uniforms.uMVP = twgl.m4.ortho(0, gl.canvas.width, gl.canvas.height, 0, -2.0, 2.0)
+  twgl.m4.ortho(0, gl.canvas.width, gl.canvas.height, 0, 0.0, 100.0, testRChunk.uniforms.uProjMtx)
+  // RHS (negative z) -> LHS (positive z)
+  twgl.m4.multiply(testRChunk.uniforms.uProjMtx, reverseZMatrix, testRChunk.uniforms.uProjMtx)
 
   gl.useProgram(shaders.rchunkOpaque.program)
   twgl.setBuffersAndAttributes(gl, shaders.rchunkOpaque, glData.staticBufferInfo)

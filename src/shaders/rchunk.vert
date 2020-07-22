@@ -10,19 +10,13 @@ precision highp int;
 
 // TODO: Reduce precision where possible. We do a lot of work here!
 
-attribute vec2 position;
+attribute mediump vec2 position;
 attribute vec2 subTileUV;
 attribute vec2 tileXY;
 
-// TODO: 2d tileID texture -> 1d tileID texture?
-// (would ideally be 8 bytes/info, 16 bytes/info max (4096px@RGBA))
-
-uniform mat4 uMVP;
-uniform vec2 uTileXYBase; // premultiplied by e.g. 32
-uniform float uDepth;
-uniform float uTileLengthDivSheetLength;
-uniform float uInvTileLengthDivSheetLength;
-uniform float uInvRChunkLengthInTiles; // = 1/32
+uniform mat4 uProjMtx;
+uniform vec4 uShove; // (base pos x, base pos y, depth, scale)
+uniform vec4 uConstants;
 
 uniform sampler2D uTileIDTex;
 
@@ -35,10 +29,13 @@ const float INV_HACK_MUL_TILE_ID = 0.25;
 const vec4 DEAD = vec4(-2000.0, -2000.0, 0.0, 1.0);
 
 void main() {
+  // unpack uniform constants
+  float uInvTileLengthDivSheetLength = uConstants.x;
+  float uInvRChunkLengthInTiles = uConstants.y;  // 1/32
+
   vec2 tileIdUV = (
     (
       vec2(0.5, 0.5)
-      + uTileXYBase
       + INV_HACK_MUL_TILE_ID * tileXY
     )
   ) * uInvRChunkLengthInTiles;
@@ -58,8 +55,9 @@ void main() {
   if (tidData.r + tidData.g > 2.0 * 254.5 / 255.0) {
     // X ~= 255, Y ~= 255... => 'this tile is empty'
     // force off-screen
-    gl_Position = vec4(-2000.0, -2000.0, 0.0, 1.0);
+    gl_Position = vec4(-2000.0, -2000.0, -1.0, 1.0);
   } else {
-    gl_Position = uMVP * vec4(position.x, position.y, uDepth, 1.0);
+    vec2 p = position * uShove.w + uShove.xy;
+    gl_Position = uProjMtx * vec4(p.xy, uShove.z, 1.0);
   }
 }
