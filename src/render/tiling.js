@@ -158,8 +158,8 @@ function _createRChunkIndices (gl) {
     indicesArr[i + 2] = v + 2
 
     indicesArr[i + 3] = v + 2
-    indicesArr[i + 4] = v + 1
-    indicesArr[i + 5] = v + 3
+    indicesArr[i + 4] = v + 3
+    indicesArr[i + 5] = v
 
     v += 4
   }
