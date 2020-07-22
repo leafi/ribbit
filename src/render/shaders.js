@@ -1,4 +1,4 @@
-import * as twgl from 'twgl.js'
+import * as twgl from 'twgl.js/dist/4.x/twgl-full.module.js'
 import rchunkVertSource from '@/shaders/rchunk.vert'
 import rchunkOpaqueFragSource from '@/shaders/rchunk-opaque.frag'
 
@@ -15,7 +15,7 @@ export function initShadersAsync (gl) {
 
     const subBuild = () => {
       if (idx >= builders.length) {
-        (numFail > 0 ? console.warn : console.info)(`${builders.length - numFail} OK, ${numFail} shaders`)
+        (numFail > 0 ? console.warn : console.info)(`${builders.length - numFail} OK, ${numFail} shaders failed`)
         resolve(numFail === 0)
         return
       }

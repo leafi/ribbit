@@ -1,11 +1,12 @@
 import {
   TILE_SHEET_LENGTH,
-  TILE_LENGTH
-  // TILES_PER_SHEET_LENGTH,
+  TILE_LENGTH,
+  TILES_PER_SHEET_LENGTH
   // MAX_TILES
 } from './limits'
-// import shaders from './shaders'
-import * as twgl from 'twgl.js'
+import shaders from './shaders'
+import * as twgl from 'twgl.js/dist/4.x/twgl-full.module.js'
+import spritesheetTestPng from '@/data/spritesheet-test.png'
 
 // 1. opaque tile layers
 //    TOP *DOWN* (min overdraw) -- but, must get depth result right!!! e.g. z ABOVE same translucent layer z
@@ -53,8 +54,98 @@ const glData = {}
 
 const testRChunk = {}
 
-function _createTestRChunkBasics (gl) {
+async function _createTestRChunkTileIdTex (gl) {
+  await new Promise(resolve => {
+    // fake tile id texture
+    const tileIdArr = new Uint8Array(RCHUNK_LENGTH_IN_TILES * RCHUNK_LENGTH_IN_TILES * 4)
+    // R,G == x,y coords of tile
+    // B,A == nothing atm.. later, special fx, probably
+    for (let i = 0; i < RCHUNK_LENGTH_IN_TILES * RCHUNK_LENGTH_IN_TILES; i++) {
+      tileIdArr[4 * i] = i % 2
+      tileIdArr[4 * i + 1] = (i / RCHUNK_LENGTH_IN_TILES) % 2
+      tileIdArr[4 * i + 2] = 0
+      tileIdArr[4 * i + 3] = 0
+    }
+    testRChunk.tileIdTex = twgl.createTexture(gl, {
+      // auto: false,
+      minMag: gl.NEAREST,
+      format: gl.RGBA,
+      height: RCHUNK_LENGTH_IN_TILES,
+      src: tileIdArr,
+      width: RCHUNK_LENGTH_IN_TILES,
+      target: gl.TEXTURE_2D,
+      level: 0,
+      unpackAlignment: 1,
+      premultiplyAlpha: false
+    })
+    resolve(true) // not a url -> no createTexture callback
+  })
+}
 
+async function _createTestRChunkTileSheetTex (gl) {
+  const imgElem = document.createElement('img')
+  imgElem.src = spritesheetTestPng
+  await imgElem.decode()
+
+  return await new Promise(resolve => {
+    testRChunk.spreadsheetTex = twgl.createTexture(gl, {
+      // auto: false,
+      minMag: gl.NEAREST,
+      format: gl.RGBA,
+      src: imgElem,
+      target: gl.TEXTURE_2D,
+      level: 0,
+      unpackAlignment: 1,
+      premultiplyAlpha: false
+    })
+    resolve(true) // not a url -> no createTexture callback
+  })
+}
+
+export async function _initTestRChunk (gl) {
+  try {
+    console.info('await tileidtex')
+    await _createTestRChunkTileIdTex(gl)
+    console.info('await tilesheettex')
+    await _createTestRChunkTileSheetTex(gl)
+    console.info('awaiting done in inittestrchunk')
+  } catch (err) {
+    console.error('_initTestRChunk', err)
+    return false
+  }
+
+  // set up uniforms
+  testRChunk.uniforms = {
+    // VS
+    uMVP: twgl.m4.ortho(0, 640, 400, 0, 1.0, 500.0),
+    uTileXYBase: [0.0, 0.0],
+    uDepth: 1.0,
+    uTileLengthDivSheetLength: TILES_PER_SHEET_LENGTH,
+    uInvTileLengthDivSheetLength: 1.0 / TILES_PER_SHEET_LENGTH,
+    uRChunkLengthInTiles: RCHUNK_LENGTH_IN_TILES,
+    // VS (texture)
+    uTileIDTex: testRChunk.tileIdTex,
+    // FS (texture)
+    uSpreadsheetTex: testRChunk.spreadsheetTex
+  }
+  return true
+}
+
+export function _rchunkRender (gl) {
+  twgl.resizeCanvasToDisplaySize(gl.canvas)
+  gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
+  gl.enable(gl.DEPTH_TEST)
+  gl.enable(gl.BLEND)
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+  gl.clearColor(0.0, 1.0, 0.0, 1.0)
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+
+  testRChunk.uniforms.uMVP = twgl.m4.ortho(0, gl.canvas.width, gl.canvas.height, 0, -2.0, 2.0)
+
+  gl.useProgram(shaders.rchunkOpaque.program)
+  twgl.setBuffersAndAttributes(gl, shaders.rchunkOpaque, glData.staticBufferInfo)
+  twgl.setUniforms(shaders.rchunkOpaque, testRChunk.uniforms)
+  twgl.drawBufferInfo(gl, glData.staticBufferInfo)
 }
 
 function _createRChunkIndices (gl) {

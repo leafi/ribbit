@@ -8,7 +8,7 @@ precision mediump float;
 precision lowp int;
 
 // ?? lowp ??
-uniform sampler2D uTileSheetTex;
+uniform sampler2D uSpreadsheetTex;
 
 varying vec4 vsfsUVAndExtra;  // 'extra' (.b,.a) usage TBD
 
@@ -18,7 +18,7 @@ void main() {
 
   vec2 uv = vsfsUVAndExtra.rg;
 
-  vec4 texel = texture2D(uTileSheetTex, uv);
+  vec4 texel = texture2D(uSpreadsheetTex, uv);
 
   gl_FragColor = vec4(
     texel.rgb,

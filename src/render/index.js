@@ -1,6 +1,6 @@
-import * as twgl from 'twgl.js'
+import * as twgl from 'twgl.js/dist/4.x/twgl-full.module.js'
 import { initShadersAsync } from './shaders'
-import { renderTilingInit } from './tiling'
+import { _initTestRChunk, _rchunkRender, renderTilingInit } from './tiling'
 import spritesheetTestPng from '@/data/spritesheet-test.png'
 
 let _gfxCanvas
@@ -37,10 +37,12 @@ export async function initRender (gfxCanvas) {
 
   const result = await initShadersAsync(gl)
 
-  if (!result) {
+  if (result !== true) {
     console.error('Shader compilation failed.')
     throw new Error('Shader compilation failed.')
   }
+
+  console.info(2)
 
   const rtiOk = renderTilingInit(gl)
   if (rtiOk !== true) {
@@ -48,6 +50,25 @@ export async function initRender (gfxCanvas) {
   }
 
   console.info('png post-import:', spritesheetTestPng)
+
+  console.info(3)
+
+  const initTestOk = await _initTestRChunk(gl)
+  if (initTestOk !== true) {
+    throw new Error('_initTestRChunk returned false', initTestOk)
+  }
+
+  console.info(4)
+
+  const rpaf = window.requestPostAnimationFrame || window.requestAnimationFrame
+
+  const renderInside = t => {
+    _rchunkRender(gl)
+    rpaf(renderInside)
+  }
+  rpaf(renderInside)
+
+  console.info(5)
 
   return true
 }
