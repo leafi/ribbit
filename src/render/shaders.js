@@ -4,9 +4,7 @@ import rchunkOpaqueFragSource from '@/shaders/rchunk-opaque.frag'
 
 const sh = {}
 
-const builders = [
-  ['rchunkOpaque', [rchunkVertSource, rchunkOpaqueFragSource]]
-]
+const builders = [['rchunkOpaque', [rchunkVertSource, rchunkOpaqueFragSource]]]
 
 export function initShadersAsync (gl) {
   return new Promise((resolve, reject) => {
@@ -15,7 +13,9 @@ export function initShadersAsync (gl) {
 
     const subBuild = () => {
       if (idx >= builders.length) {
-        (numFail > 0 ? console.warn : console.info)(`${builders.length - numFail} OK, ${numFail} shaders failed`)
+        ;(numFail > 0 ? console.warn : console.info)(
+          `${builders.length - numFail} OK, ${numFail} shaders failed`
+        )
         resolve(numFail === 0)
         return
       }

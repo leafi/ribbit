@@ -13,20 +13,17 @@ export async function initRender (gfxCanvas) {
     enableVertexArrayObjects: false
   })
 
-  const gl = twgl.getWebGLContext(
-    gfxCanvas,
-    {
-      alpha: false, // opaque
-      desynchronized: true, // er... faster? might be bad
-      antialias: false, // LOL no
-      depth: true, // used a lot
-      failIfMajorPerformanceCaveat: false, // have a go!
-      powerPreference: 'default', // up 2 u
-      premultipliedAlpha: false, // probably should... but I don't do premult
-      preserveDrawingBuffer: false, // for now: always discard
-      stencil: true // might come in handy
-    }
-  )
+  const gl = twgl.getWebGLContext(gfxCanvas, {
+    alpha: false, // opaque
+    desynchronized: true, // er... faster? might be bad
+    antialias: false, // LOL no
+    depth: true, // used a lot
+    failIfMajorPerformanceCaveat: false, // have a go!
+    powerPreference: 'default', // up 2 u
+    premultipliedAlpha: false, // probably should... but I don't do premult
+    preserveDrawingBuffer: false, // for now: always discard
+    stencil: true // might come in handy
+  })
 
   if (!gl) {
     throw new Error('Failed to initialize WebGL. Even 1.0 should work!')

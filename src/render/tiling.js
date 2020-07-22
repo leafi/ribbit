@@ -58,7 +58,9 @@ const reverseZMatrix = twgl.m4.scaling([1.0, 1.0, -1.0])
 async function _createTestRChunkTileIdTex (gl) {
   await new Promise(resolve => {
     // fake tile id texture
-    const tileIdArr = new Uint8Array(RCHUNK_LENGTH_IN_TILES * RCHUNK_LENGTH_IN_TILES * 4)
+    const tileIdArr = new Uint8Array(
+      RCHUNK_LENGTH_IN_TILES * RCHUNK_LENGTH_IN_TILES * 4
+    )
     // R,G == x,y coords of tile
     // B,A == nothing atm.. later, special fx, probably
     for (let i = 0; i < RCHUNK_LENGTH_IN_TILES * RCHUNK_LENGTH_IN_TILES; i++) {
@@ -67,25 +69,29 @@ async function _createTestRChunkTileIdTex (gl) {
       tileIdArr[4 * i + 2] = 0
       tileIdArr[4 * i + 3] = 0
     }
-    testRChunk.tileIdTex = twgl.createTexture(gl, {
-      // auto: false,
-      minMag: gl.NEAREST,
-      format: gl.RGBA,
-      height: RCHUNK_LENGTH_IN_TILES,
-      src: tileIdArr,
-      width: RCHUNK_LENGTH_IN_TILES,
-      target: gl.TEXTURE_2D,
-      level: 0,
-      unpackAlignment: 1,
-      premultiplyAlpha: false
-    }, (err, tex) => {
-      // only called if texture loading happened asynchronously...
-      if (err) {
-        console.error('Texture load failed!', err)
-        throw new Error(err)
+    testRChunk.tileIdTex = twgl.createTexture(
+      gl,
+      {
+        // auto: false,
+        minMag: gl.NEAREST,
+        format: gl.RGBA,
+        height: RCHUNK_LENGTH_IN_TILES,
+        src: tileIdArr,
+        width: RCHUNK_LENGTH_IN_TILES,
+        target: gl.TEXTURE_2D,
+        level: 0,
+        unpackAlignment: 1,
+        premultiplyAlpha: false
+      },
+      (err, tex) => {
+        // only called if texture loading happened asynchronously...
+        if (err) {
+          console.error('Texture load failed!', err)
+          throw new Error(err)
+        }
+        testRChunk.spreadsheetTex = tex
       }
-      testRChunk.spreadsheetTex = tex
-    })
+    )
     resolve(true) // not a url -> no createTexture callback
   })
 }
@@ -96,23 +102,27 @@ async function _createTestRChunkTileSheetTex (gl) {
   await imgElem.decode()
 
   return await new Promise(resolve => {
-    testRChunk.spreadsheetTex = twgl.createTexture(gl, {
-      // auto: false,
-      minMag: gl.NEAREST,
-      format: gl.RGBA,
-      src: imgElem,
-      target: gl.TEXTURE_2D,
-      level: 0,
-      unpackAlignment: 1,
-      premultiplyAlpha: false
-    }, (err, tex) => {
-      // only called if texture loading happened asynchronously...
-      if (err) {
-        console.error('Texture load failed!', err)
-        throw new Error(err)
+    testRChunk.spreadsheetTex = twgl.createTexture(
+      gl,
+      {
+        // auto: false,
+        minMag: gl.NEAREST,
+        format: gl.RGBA,
+        src: imgElem,
+        target: gl.TEXTURE_2D,
+        level: 0,
+        unpackAlignment: 1,
+        premultiplyAlpha: false
+      },
+      (err, tex) => {
+        // only called if texture loading happened asynchronously...
+        if (err) {
+          console.error('Texture load failed!', err)
+          throw new Error(err)
+        }
+        testRChunk.spreadsheetTex = tex
       }
-      testRChunk.spreadsheetTex = tex
-    })
+    )
     resolve(true) // not a url -> no createTexture callback
   })
 }
@@ -175,7 +185,11 @@ export function _rchunkRender (gl) {
   )
 
   gl.useProgram(shaders.rchunkOpaque.program)
-  twgl.setBuffersAndAttributes(gl, shaders.rchunkOpaque, glData.staticBufferInfo)
+  twgl.setBuffersAndAttributes(
+    gl,
+    shaders.rchunkOpaque,
+    glData.staticBufferInfo
+  )
   twgl.setUniforms(shaders.rchunkOpaque, testRChunk.globalUniforms)
   twgl.setUniforms(shaders.rchunkOpaque, testRChunk.perChunkUniforms)
   twgl.drawBufferInfo(gl, glData.staticBufferInfo)
@@ -214,7 +228,7 @@ function _createRChunkBufferInfo (gl) {
   // .x and .y are tile coords data; which tile does this vertex belong to?
   // .z and .w are sub-tile UV data - is this the start or end of a tile, horz or vert?
   for (let i = 0; 16 * i < RCHUNK_NUM_VERTS * 4; i++) {
-    const tileIdxX = (i % RCHUNK_LENGTH_IN_TILES) | 0
+    const tileIdxX = i % RCHUNK_LENGTH_IN_TILES | 0
     const tileIdxY = (i / RCHUNK_LENGTH_IN_TILES) | 0
     const iBase = (16 * i) | 0
 
@@ -261,10 +275,16 @@ function _createRChunkBufferInfo (gl) {
 
 export function renderTilingInit (gl) {
   if (gl.MAX_TEXTURE_SIZE < TILE_SHEET_LENGTH) {
-    return [false, `max texture size ${gl.MAX_TEXTURE_SIZE} must be at least ${TILE_SHEET_LENGTH}`]
+    return [
+      false,
+      `max texture size ${gl.MAX_TEXTURE_SIZE} must be at least ${TILE_SHEET_LENGTH}`
+    ]
   }
   if (gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS < 1) {
-    return [false, 'tile renderer requires at least 1 vertex texture image unit']
+    return [
+      false,
+      'tile renderer requires at least 1 vertex texture image unit'
+    ]
   }
 
   _createRChunkIndices(gl)

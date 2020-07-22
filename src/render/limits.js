@@ -6,7 +6,7 @@ export const TILE_SHEET_LENGTH = 2048
 export const TILE_LENGTH = 16
 
 // how many tiles fit in the spritesheet lengthways? (128)
-export const TILES_PER_SHEET_LENGTH = ((TILE_SHEET_LENGTH / TILE_LENGTH) | 0)
+export const TILES_PER_SHEET_LENGTH = (TILE_SHEET_LENGTH / TILE_LENGTH) | 0
 
 // how many tiles fit in the spritesheet? (128*128 == 16,384)
 export const MAX_TILES = 16384
