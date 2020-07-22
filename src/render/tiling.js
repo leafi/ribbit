@@ -194,7 +194,7 @@ function _createRChunkBufferInfo (gl) {
   // fill in position Y coords
   for (let i = 0; i * 8 < RCHUNK_NUM_VERTS * 2; i++) {
     // y of TL, y of BL, y of BR, y of TR
-    const tileIdxY = i / RCHUNK_LENGTH_IN_TILES
+    const tileIdxY = (i / RCHUNK_LENGTH_IN_TILES) | 0
     positionData[8 * i + 1] = TILE_LENGTH * tileIdxY
     positionData[8 * i + 3] = TILE_LENGTH * tileIdxY + TILE_LENGTH
     positionData[8 * i + 5] = TILE_LENGTH * tileIdxY + TILE_LENGTH
