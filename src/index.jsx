@@ -6,6 +6,7 @@ import './global.css'
 import { recreateStore } from './store'
 // import App from './components/App'
 // import Minim from '@/Minim'
+import { initRender } from '@/render'
 
 console.log('Hi there!')
 
@@ -27,3 +28,5 @@ recreateStore()
 // Minim()
 
 // render(<App />, appDiv)
+
+initRender(gfxCanvas)

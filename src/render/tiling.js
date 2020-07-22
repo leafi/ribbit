@@ -4,6 +4,7 @@ import {
   // TILES_PER_SHEET_LENGTH,
   // MAX_TILES
 } from './limits'
+// import shaders from './shaders'
 import * as twgl from 'twgl.js'
 
 // 1. opaque tile layers
@@ -50,6 +51,12 @@ export const RCHUNK_NUM_VERTS = 4 * RCHUNK_LENGTH_IN_TILES * RCHUNK_LENGTH_IN_TI
 
 const glData = {}
 
+const testRChunk = {}
+
+function _createTestRChunkBasics (gl) {
+
+}
+
 function _createRChunkIndices (gl) {
   // index buffer (for repeated chunk)
   const indicesArr = new Uint16Array(RCHUNK_NUM_INDICES)
@@ -77,60 +84,84 @@ function _createRChunkIndices (gl) {
 }
 
 function _createRChunkBufferInfo (gl) {
-  const position = new Float32Array(RCHUNK_NUM_VERTS * 2)
+  // const POSITION_NUM_FLOATS = RCHUNK_NUM_VERTS * 2
+  // const SUBTILE_UV_NUM_BYTES = RCHUNK_NUM_VERTS * 2
+  // const TILE_XY_NUM_BYTES = RCHUNK_NUM_VERTS * 2
+  // new ArrayBuffer(
+  const positionData = new Float32Array(RCHUNK_NUM_VERTS * 2)
 
   // 1. fill in position X coords
   for (let i = 0; i * 8 < RCHUNK_NUM_VERTS * 2; i++) {
     // x of TL, x of BL, x of BR, x of TR
     const tileIdxX = i % RCHUNK_LENGTH_IN_TILES
-    position[8 * i] = TILE_LENGTH * tileIdxX
-    position[8 * i + 2] = TILE_LENGTH * tileIdxX
-    position[8 * i + 4] = TILE_LENGTH * tileIdxX + TILE_LENGTH
-    position[8 * i + 6] = TILE_LENGTH * tileIdxX + TILE_LENGTH
+    positionData[8 * i] = TILE_LENGTH * tileIdxX
+    positionData[8 * i + 2] = TILE_LENGTH * tileIdxX
+    positionData[8 * i + 4] = TILE_LENGTH * tileIdxX + TILE_LENGTH
+    positionData[8 * i + 6] = TILE_LENGTH * tileIdxX + TILE_LENGTH
   }
 
   // fill in position Y coords
   for (let i = 0; i * 8 < RCHUNK_NUM_VERTS * 2; i++) {
     // y of TL, y of BL, y of BR, y of TR
     const tileIdxY = i / RCHUNK_LENGTH_IN_TILES
-    position[8 * i + 1] = TILE_LENGTH * tileIdxY
-    position[8 * i + 3] = TILE_LENGTH * tileIdxY + TILE_LENGTH
-    position[8 * i + 5] = TILE_LENGTH * tileIdxY + TILE_LENGTH
-    position[8 * i + 7] = TILE_LENGTH * tileIdxY
+    positionData[8 * i + 1] = TILE_LENGTH * tileIdxY
+    positionData[8 * i + 3] = TILE_LENGTH * tileIdxY + TILE_LENGTH
+    positionData[8 * i + 5] = TILE_LENGTH * tileIdxY + TILE_LENGTH
+    positionData[8 * i + 7] = TILE_LENGTH * tileIdxY
   }
 
-  const subtileUV = new Float32Array(RCHUNK_NUM_VERTS * 2)
+  /*
+  const subTileUVData = new Float32Array(RCHUNK_NUM_VERTS * 2)
 
   for (let i = 0; i < RCHUNK_NUM_VERTS * 2; i += 8) {
     // TL
-    subtileUV[i] = 0
-    subtileUV[i + 1] = 0
+    subTileUVData[i] = 0
+    subTileUVData[i + 1] = 0
     // BL
-    subtileUV[i + 2] = 0
-    subtileUV[i + 3] = 1
+    subTileUVData[i + 2] = 0
+    subTileUVData[i + 3] = 1
     // BR
-    subtileUV[i + 4] = 1
-    subtileUV[i + 5] = 1
+    subTileUVData[i + 4] = 1
+    subTileUVData[i + 5] = 1
     // TR
-    subtileUV[i + 6] = 1
-    subtileUV[i + 7] = 0
+    subTileUVData[i + 6] = 1
+    subTileUVData[i + 7] = 0
+  }
+  */
+  const subTileUVData = new Uint8Array(RCHUNK_NUM_VERTS * 2)
+
+  // TL, BL, BR, TR
+  const subTileUVPattern = [0, 0, 0, 255, 255, 255, 255, 0]
+  for (let i = 0; i < RCHUNK_NUM_VERTS * 2; i += 8) {
+    subTileUVData.set(subTileUVPattern, i)
   }
 
-  const tileXY = new Uint8Array(RCHUNK_NUM_VERTS * 2)
+  const tileXYData = new Uint8Array(RCHUNK_NUM_VERTS * 2)
 
   for (let i = 0; i < RCHUNK_NUM_VERTS * 2; i += 2) {
     // x
-    tileXY[i] = i % RCHUNK_LENGTH_IN_TILES
+    tileXYData[i] = i % RCHUNK_LENGTH_IN_TILES
     // y
-    tileXY[i + 1] = i / RCHUNK_LENGTH_IN_TILES
+    tileXYData[i + 1] = i / RCHUNK_LENGTH_IN_TILES
   }
 
   glData.staticBufferInfo = twgl.createBufferInfoFromArrays(
     gl,
     {
-      position,
-      subtileUV,
-      tileXY
+      position: {
+        data: positionData,
+        numComponents: 2
+      },
+      subTileUV: {
+        data: subTileUVData,
+        normalize: true,
+        numComponents: 2
+      },
+      tileXY: {
+        data: tileXYData,
+        normalize: false,
+        numComponents: 2
+      }
     },
     {
       numElements: RCHUNK_NUM_INDICES,
