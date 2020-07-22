@@ -2,7 +2,6 @@ import {
   TILE_SHEET_LENGTH,
   TILE_LENGTH,
   TILES_PER_SHEET_LENGTH
-  // MAX_TILES
 } from './limits'
 import shaders from './shaders'
 import * as twgl from 'twgl.js/dist/4.x/twgl-full.module.js'
@@ -47,11 +46,8 @@ export const RCHUNK_LENGTH_IN_PX = RCHUNK_LENGTH_IN_TILES * TILE_LENGTH
 // ^ So we'll (for opaque non-object layers) cover 512x512px of 1 layer per draw call.
 
 // num indices is 6/4ths of num verts
-export const RCHUNK_NUM_INDICES = 6 * RCHUNK_LENGTH_IN_TILES * RCHUNK_LENGTH_IN_TILES
-export const RCHUNK_NUM_VERTS = 4 * RCHUNK_LENGTH_IN_TILES * RCHUNK_LENGTH_IN_TILES
-
-// must be kept in sync with INV_HACK_MUL_TILE_ID const in rchunk.vert!
-const HACK_MUL_TILE_ID = 4
+const RCHUNK_NUM_INDICES = 6 * RCHUNK_LENGTH_IN_TILES * RCHUNK_LENGTH_IN_TILES
+const RCHUNK_NUM_VERTS = 4 * RCHUNK_LENGTH_IN_TILES * RCHUNK_LENGTH_IN_TILES
 
 const glData = {}
 
@@ -131,20 +127,23 @@ export async function _initTestRChunk (gl) {
   }
 
   // set up uniforms
-  testRChunk.uniforms = {
+  testRChunk.globalUniforms = {
     // VS
     uProjMtx: twgl.m4.identity(),
-    uShove: [0.0, 0.0, 1.0, 2.0], // (chunk pos x, chunk pos y, depth, scale)
     uConstants: [
       1.0 / TILES_PER_SHEET_LENGTH, // uInvTileLengthDivSheetLength
       1.0 / RCHUNK_LENGTH_IN_TILES, // uInvRChunkLengthInTiles
-      0.0,
+      TILE_LENGTH,
       0.0
     ],
-    // VS (texture)
-    uTileIDTex: testRChunk.tileIdTex,
     // FS (texture)
     uSpreadsheetTex: testRChunk.spreadsheetTex
+  }
+  testRChunk.perChunkUniforms = {
+    // VS
+    uShove: [0.0, 0.0, 1.0, 2.0], // (chunk pos x, chunk pos y, depth, scale)
+    // VS (texture)
+    uTileIdTex: testRChunk.tileIdTex
   }
   return true
 }
@@ -158,13 +157,27 @@ export function _rchunkRender (gl) {
   gl.clearColor(0.0, 1.0, 0.0, 1.0)
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-  twgl.m4.ortho(0, gl.canvas.width, gl.canvas.height, 0, 0.0, 100.0, testRChunk.uniforms.uProjMtx)
-  // RHS (negative z) -> LHS (positive z)
-  twgl.m4.multiply(testRChunk.uniforms.uProjMtx, reverseZMatrix, testRChunk.uniforms.uProjMtx)
+  // set testRChunk.globalUniforms.uProjMtx
+  twgl.m4.ortho(
+    0,
+    gl.canvas.width,
+    gl.canvas.height,
+    0,
+    0.0,
+    100.0,
+    testRChunk.globalUniforms.uProjMtx
+  )
+  // (RHS (negative z) -> LHS (positive z))
+  twgl.m4.multiply(
+    testRChunk.globalUniforms.uProjMtx,
+    reverseZMatrix,
+    testRChunk.globalUniforms.uProjMtx
+  )
 
   gl.useProgram(shaders.rchunkOpaque.program)
   twgl.setBuffersAndAttributes(gl, shaders.rchunkOpaque, glData.staticBufferInfo)
-  twgl.setUniforms(shaders.rchunkOpaque, testRChunk.uniforms)
+  twgl.setUniforms(shaders.rchunkOpaque, testRChunk.globalUniforms)
+  twgl.setUniforms(shaders.rchunkOpaque, testRChunk.perChunkUniforms)
   twgl.drawBufferInfo(gl, glData.staticBufferInfo)
 }
 
@@ -195,67 +208,47 @@ function _createRChunkIndices (gl) {
 }
 
 function _createRChunkBufferInfo (gl) {
-  const positionData = new Float32Array(RCHUNK_NUM_VERTS * 2)
-  const tileXYData = new Uint8Array(RCHUNK_NUM_VERTS * 2)
+  // construct combined stream data
+  const tileXYUVData = new Uint8Array(RCHUNK_NUM_VERTS * 4)
 
-  // fill in positionData, tileXYData
-  for (let i = 0; i * 8 < RCHUNK_NUM_VERTS * 2; i++) {
-    const tileIdxX = i % RCHUNK_LENGTH_IN_TILES
+  // .x and .y are tile coords data; which tile does this vertex belong to?
+  // .z and .w are sub-tile UV data - is this the start or end of a tile, horz or vert?
+  for (let i = 0; 16 * i < RCHUNK_NUM_VERTS * 4; i++) {
+    const tileIdxX = (i % RCHUNK_LENGTH_IN_TILES) | 0
     const tileIdxY = (i / RCHUNK_LENGTH_IN_TILES) | 0
-    const iMul8 = (8 * i) | 0
+    const iBase = (16 * i) | 0
 
-    // position TL
-    positionData[iMul8] = TILE_LENGTH * tileIdxX
-    positionData[iMul8 + 1] = TILE_LENGTH * tileIdxY
-
-    // position BL
-    positionData[iMul8 + 2] = TILE_LENGTH * tileIdxX
-    positionData[iMul8 + 3] = TILE_LENGTH * tileIdxY + TILE_LENGTH
-
-    // position BR
-    positionData[iMul8 + 4] = TILE_LENGTH * tileIdxX + TILE_LENGTH
-    positionData[iMul8 + 5] = TILE_LENGTH * tileIdxY + TILE_LENGTH
-
-    // position TR
-    positionData[iMul8 + 6] = TILE_LENGTH * tileIdxX + TILE_LENGTH
-    positionData[iMul8 + 7] = TILE_LENGTH * tileIdxY
+    // vertex order: TL, BL, BR, TR
 
     // basic x tile coord
-    tileXYData[iMul8] = tileIdxX * HACK_MUL_TILE_ID
-    tileXYData[iMul8 + 2] = tileIdxX * HACK_MUL_TILE_ID
-    tileXYData[iMul8 + 4] = tileIdxX * HACK_MUL_TILE_ID
-    tileXYData[iMul8 + 6] = tileIdxX * HACK_MUL_TILE_ID
+    tileXYUVData[iBase] = tileIdxX
+    tileXYUVData[iBase + 4] = tileIdxX
+    tileXYUVData[iBase + 8] = tileIdxX
+    tileXYUVData[iBase + 12] = tileIdxX
     // basic y tile coord
-    tileXYData[iMul8 + 1] = tileIdxY * HACK_MUL_TILE_ID
-    tileXYData[iMul8 + 3] = tileIdxY * HACK_MUL_TILE_ID
-    tileXYData[iMul8 + 5] = tileIdxY * HACK_MUL_TILE_ID
-    tileXYData[iMul8 + 7] = tileIdxY * HACK_MUL_TILE_ID
-  }
-
-  const subTileUVData = new Uint8Array(RCHUNK_NUM_VERTS * 2)
-
-  // TL, BL, BR, TR
-  const subTileUVPattern = [0, 0, 0, 255, 255, 255, 255, 0]
-  for (let i = 0; i < RCHUNK_NUM_VERTS * 2; i += 8) {
-    subTileUVData.set(subTileUVPattern, i)
+    tileXYUVData[iBase + 1] = tileIdxY
+    tileXYUVData[iBase + 5] = tileIdxY
+    tileXYUVData[iBase + 9] = tileIdxY
+    tileXYUVData[iBase + 13] = tileIdxY
+    // sub-tile U tex coord
+    tileXYUVData[iBase + 2] = 0
+    tileXYUVData[iBase + 6] = 0
+    tileXYUVData[iBase + 10] = 1
+    tileXYUVData[iBase + 14] = 1
+    // sub-tile V tex coord
+    tileXYUVData[iBase + 3] = 0
+    tileXYUVData[iBase + 7] = 1
+    tileXYUVData[iBase + 11] = 1
+    tileXYUVData[iBase + 15] = 0
   }
 
   glData.staticBufferInfo = twgl.createBufferInfoFromArrays(
     gl,
     {
-      position: {
-        data: positionData,
-        numComponents: 2
-      },
-      subTileUV: {
-        data: subTileUVData,
-        normalize: true,
-        numComponents: 2
-      },
-      tileXY: {
-        data: tileXYData,
+      tileXYUV: {
+        data: tileXYUVData,
         normalize: false,
-        numComponents: 2
+        numComponents: 4
       }
     },
     {
