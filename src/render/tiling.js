@@ -50,6 +50,9 @@ export const RCHUNK_LENGTH_IN_PX = RCHUNK_LENGTH_IN_TILES * TILE_LENGTH
 export const RCHUNK_NUM_INDICES = 6 * RCHUNK_LENGTH_IN_TILES * RCHUNK_LENGTH_IN_TILES
 export const RCHUNK_NUM_VERTS = 4 * RCHUNK_LENGTH_IN_TILES * RCHUNK_LENGTH_IN_TILES
 
+// must be kept in sync with INV_HACK_MUL_TILE_ID const in rchunk.vert!
+const HACK_MUL_TILE_ID = 4
+
 const glData = {}
 
 const testRChunk = {}
@@ -77,6 +80,13 @@ async function _createTestRChunkTileIdTex (gl) {
       level: 0,
       unpackAlignment: 1,
       premultiplyAlpha: false
+    }, (err, tex) => {
+      // only called if texture loading happened asynchronously...
+      if (err) {
+        console.error('Texture load failed!', err)
+        throw new Error(err)
+      }
+      testRChunk.spreadsheetTex = tex
     })
     resolve(true) // not a url -> no createTexture callback
   })
@@ -97,6 +107,13 @@ async function _createTestRChunkTileSheetTex (gl) {
       level: 0,
       unpackAlignment: 1,
       premultiplyAlpha: false
+    }, (err, tex) => {
+      // only called if texture loading happened asynchronously...
+      if (err) {
+        console.error('Texture load failed!', err)
+        throw new Error(err)
+      }
+      testRChunk.spreadsheetTex = tex
     })
     resolve(true) // not a url -> no createTexture callback
   })
@@ -104,11 +121,8 @@ async function _createTestRChunkTileSheetTex (gl) {
 
 export async function _initTestRChunk (gl) {
   try {
-    console.info('await tileidtex')
     await _createTestRChunkTileIdTex(gl)
-    console.info('await tilesheettex')
     await _createTestRChunkTileSheetTex(gl)
-    console.info('awaiting done in inittestrchunk')
   } catch (err) {
     console.error('_initTestRChunk', err)
     return false
@@ -122,7 +136,7 @@ export async function _initTestRChunk (gl) {
     uDepth: 1.0,
     uTileLengthDivSheetLength: TILES_PER_SHEET_LENGTH,
     uInvTileLengthDivSheetLength: 1.0 / TILES_PER_SHEET_LENGTH,
-    uRChunkLengthInTiles: RCHUNK_LENGTH_IN_TILES,
+    uInvRChunkLengthInTiles: 1.0 / RCHUNK_LENGTH_IN_TILES,
     // VS (texture)
     uTileIDTex: testRChunk.tileIdTex,
     // FS (texture)
@@ -175,65 +189,49 @@ function _createRChunkIndices (gl) {
 }
 
 function _createRChunkBufferInfo (gl) {
-  // const POSITION_NUM_FLOATS = RCHUNK_NUM_VERTS * 2
-  // const SUBTILE_UV_NUM_BYTES = RCHUNK_NUM_VERTS * 2
-  // const TILE_XY_NUM_BYTES = RCHUNK_NUM_VERTS * 2
-  // new ArrayBuffer(
   const positionData = new Float32Array(RCHUNK_NUM_VERTS * 2)
+  const tileXYData = new Uint8Array(RCHUNK_NUM_VERTS * 2)
 
-  // 1. fill in position X coords
+  // fill in positionData, tileXYData
   for (let i = 0; i * 8 < RCHUNK_NUM_VERTS * 2; i++) {
-    // x of TL, x of BL, x of BR, x of TR
     const tileIdxX = i % RCHUNK_LENGTH_IN_TILES
-    positionData[8 * i] = TILE_LENGTH * tileIdxX
-    positionData[8 * i + 2] = TILE_LENGTH * tileIdxX
-    positionData[8 * i + 4] = TILE_LENGTH * tileIdxX + TILE_LENGTH
-    positionData[8 * i + 6] = TILE_LENGTH * tileIdxX + TILE_LENGTH
-  }
-
-  // fill in position Y coords
-  for (let i = 0; i * 8 < RCHUNK_NUM_VERTS * 2; i++) {
-    // y of TL, y of BL, y of BR, y of TR
     const tileIdxY = (i / RCHUNK_LENGTH_IN_TILES) | 0
-    positionData[8 * i + 1] = TILE_LENGTH * tileIdxY
-    positionData[8 * i + 3] = TILE_LENGTH * tileIdxY + TILE_LENGTH
-    positionData[8 * i + 5] = TILE_LENGTH * tileIdxY + TILE_LENGTH
-    positionData[8 * i + 7] = TILE_LENGTH * tileIdxY
+    const iMul8 = (8 * i) | 0
+
+    // position TL
+    positionData[iMul8] = TILE_LENGTH * tileIdxX
+    positionData[iMul8 + 1] = TILE_LENGTH * tileIdxY
+
+    // position BL
+    positionData[iMul8 + 2] = TILE_LENGTH * tileIdxX
+    positionData[iMul8 + 3] = TILE_LENGTH * tileIdxY + TILE_LENGTH
+
+    // position BR
+    positionData[iMul8 + 4] = TILE_LENGTH * tileIdxX + TILE_LENGTH
+    positionData[iMul8 + 5] = TILE_LENGTH * tileIdxY + TILE_LENGTH
+
+    // position TR
+    positionData[iMul8 + 6] = TILE_LENGTH * tileIdxX + TILE_LENGTH
+    positionData[iMul8 + 7] = TILE_LENGTH * tileIdxY
+
+    // basic x tile coord
+    tileXYData[iMul8] = tileIdxX * HACK_MUL_TILE_ID
+    tileXYData[iMul8 + 2] = tileIdxX * HACK_MUL_TILE_ID
+    tileXYData[iMul8 + 4] = tileIdxX * HACK_MUL_TILE_ID
+    tileXYData[iMul8 + 6] = tileIdxX * HACK_MUL_TILE_ID
+    // basic y tile coord
+    tileXYData[iMul8 + 1] = tileIdxY * HACK_MUL_TILE_ID
+    tileXYData[iMul8 + 3] = tileIdxY * HACK_MUL_TILE_ID
+    tileXYData[iMul8 + 5] = tileIdxY * HACK_MUL_TILE_ID
+    tileXYData[iMul8 + 7] = tileIdxY * HACK_MUL_TILE_ID
   }
 
-  /*
-  const subTileUVData = new Float32Array(RCHUNK_NUM_VERTS * 2)
-
-  for (let i = 0; i < RCHUNK_NUM_VERTS * 2; i += 8) {
-    // TL
-    subTileUVData[i] = 0
-    subTileUVData[i + 1] = 0
-    // BL
-    subTileUVData[i + 2] = 0
-    subTileUVData[i + 3] = 1
-    // BR
-    subTileUVData[i + 4] = 1
-    subTileUVData[i + 5] = 1
-    // TR
-    subTileUVData[i + 6] = 1
-    subTileUVData[i + 7] = 0
-  }
-  */
   const subTileUVData = new Uint8Array(RCHUNK_NUM_VERTS * 2)
 
   // TL, BL, BR, TR
   const subTileUVPattern = [0, 0, 0, 255, 255, 255, 255, 0]
   for (let i = 0; i < RCHUNK_NUM_VERTS * 2; i += 8) {
     subTileUVData.set(subTileUVPattern, i)
-  }
-
-  const tileXYData = new Uint8Array(RCHUNK_NUM_VERTS * 2)
-
-  for (let i = 0; i < RCHUNK_NUM_VERTS * 2; i += 2) {
-    // x
-    tileXYData[i] = i % RCHUNK_LENGTH_IN_TILES
-    // y
-    tileXYData[i + 1] = i / RCHUNK_LENGTH_IN_TILES
   }
 
   glData.staticBufferInfo = twgl.createBufferInfoFromArrays(

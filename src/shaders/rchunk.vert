@@ -22,12 +22,15 @@ uniform vec2 uTileXYBase; // premultiplied by e.g. 32
 uniform float uDepth;
 uniform float uTileLengthDivSheetLength;
 uniform float uInvTileLengthDivSheetLength;
-uniform int uRChunkLengthInTiles; // = 32;
+uniform float uInvRChunkLengthInTiles; // = 1/32
 
 uniform sampler2D uTileIDTex;
 
 // VS -> FS
 varying vec4 vsfsUVAndExtra; // (.rg := uv, .ba := whatever)
+
+// must be kept in sync with HACK_MUL_TILE_ID in src/render/tiling.js
+const float INV_HACK_MUL_TILE_ID = 0.25;
 
 const vec4 DEAD = vec4(-2000.0, -2000.0, 0.0, 1.0);
 
@@ -36,9 +39,9 @@ void main() {
     (
       vec2(0.5, 0.5)
       + uTileXYBase
-      + vec2(tileXY.x, tileXY.y)
+      + INV_HACK_MUL_TILE_ID * tileXY
     )
-  ) * uInvTileLengthDivSheetLength;
+  ) * uInvRChunkLengthInTiles;
 
   // TODO: pack tile id x,y data into 2 bytes, TIGHTLY.
   // Right now b,a channels of RGBA tile id texture aren't very useful...
@@ -49,7 +52,7 @@ void main() {
   // A channel: ?? extra data for pixel shader
   vec4 tidData = texture2D(uTileIDTex, tileIdUV);
 
-  vec2 vsfsUV = (tidData.rg * 255.0 + subTileUV) * uTileLengthDivSheetLength;
+  vec2 vsfsUV = (tidData.rg * 255.0 + subTileUV) * uInvTileLengthDivSheetLength;
   vsfsUVAndExtra = vec4(vsfsUV.x, vsfsUV.y, tidData.b, tidData.a);
 
   if (tidData.r + tidData.g > 2.0 * 254.5 / 255.0) {
