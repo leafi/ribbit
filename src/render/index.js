@@ -1,7 +1,9 @@
 import * as twgl from 'twgl.js/dist/4.x/twgl-full.module.js'
+import { TILE_SHEET_LENGTH } from './limits'
+import * as ortho from './ortho'
+import * as renderRChunk from './renderRChunk'
 import { initShadersAsync } from './shaders'
-import { _initTestRChunk, _rchunkRender, renderTilingInit } from './tiling'
-import spritesheetTestPng from '@/data/spritesheet-test.png'
+import * as spritesheet from './spritesheet'
 
 let _gfxCanvas
 let _gl
@@ -32,6 +34,12 @@ export async function initRender (gfxCanvas) {
   _gfxCanvas = gfxCanvas
   _gl = gl
 
+  if (gl.MAX_TEXTURE_SIZE < TILE_SHEET_LENGTH) {
+    throw new Error(
+      `Max supported texture size too low: needed ${TILE_SHEET_LENGTH} but only ${gl.MAX_TEXTURE_SIZE} is available`
+    )
+  }
+
   const result = await initShadersAsync(gl)
 
   if (result !== true) {
@@ -39,33 +47,31 @@ export async function initRender (gfxCanvas) {
     throw new Error('Shader compilation failed.')
   }
 
-  console.info(2)
-
-  const rtiOk = renderTilingInit(gl)
-  if (rtiOk !== true) {
-    throw new Error(`Failed to init WebGL: renderTilingInit: ${rtiOk[1]}`)
+  const sheetOk = await spritesheet.createAsync(gl)
+  if (!sheetOk) {
+    throw new Error('Failed to load spritesheet')
   }
 
-  console.info('png post-import:', spritesheetTestPng)
+  renderRChunk.init(gl)
 
-  console.info(3)
-
-  const initTestOk = await _initTestRChunk(gl)
-  if (initTestOk !== true) {
-    throw new Error('_initTestRChunk returned false', initTestOk)
-  }
-
-  console.info(4)
+  const testTileIdTex = renderRChunk.createTestTileIdTex(gl)
 
   const rpaf = window.requestPostAnimationFrame || window.requestAnimationFrame
 
   const renderInside = t => {
-    _rchunkRender(gl)
+    ortho.viewport(gl)
+
+    gl.enable(gl.DEPTH_TEST)
+    gl.enable(gl.BLEND)
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+    gl.clearColor(0.0, 0.5, 0.5, 1.0)
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+
+    renderRChunk.renderOpaque(gl, testTileIdTex, 0.0, 0.0, 1.0, 2.0)
+
     rpaf(renderInside)
   }
   rpaf(renderInside)
-
-  console.info(5)
 
   return true
 }

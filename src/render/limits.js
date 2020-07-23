@@ -10,3 +10,6 @@ export const TILES_PER_SHEET_LENGTH = (TILE_SHEET_LENGTH / TILE_LENGTH) | 0
 
 // how many tiles fit in the spritesheet? (128*128 == 16,384)
 export const MAX_TILES = 16384
+
+// how many tiles fit in a tile id texture, lengthways? (32)
+export const RCHUNK_LENGTH_IN_TILES = 32
