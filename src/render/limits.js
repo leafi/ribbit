@@ -13,3 +13,13 @@ export const MAX_TILES = 16384
 
 // how many tiles fit in a tile id texture, lengthways? (32)
 export const RCHUNK_LENGTH_IN_TILES = 32
+
+export const TILE_WORLD_ROW_STRIDE = (1 << 24) | 0
+
+export const TILE_WORLD_CHUNK_ROW_STRIDE = (TILE_WORLD_ROW_STRIDE / RCHUNK_LENGTH_IN_TILES) | 0
+
+// 'x == 0' is actually half way through the row, so we have -ve space
+export const TILE_WORLD_X_OFFSET = (1 << 23) | 0
+
+export const TILE_WORLD_MIN_X = -TILE_WORLD_X_OFFSET
+export const TILE_WORLD_MAX_X = TILE_WORLD_X_OFFSET - 1
