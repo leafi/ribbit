@@ -34,6 +34,7 @@ export const TILE_WORLD_LAYER_STRIDE = (1 << 22) | 0
 
 // 'x == 0' is actually half way through the row, so we have -ve space
 export const TILE_WORLD_X_OFFSET = (1 << 10) | 0
+export const TILE_WORLD_Y_OFFSET = TILE_WORLD_X_OFFSET
 
 export const TILE_WORLD_MIN_X = -TILE_WORLD_X_OFFSET
 export const TILE_WORLD_MAX_X = TILE_WORLD_X_OFFSET - 1
@@ -42,4 +43,4 @@ export const TILE_WORLD_MAX_X = TILE_WORLD_X_OFFSET - 1
 export const TILE_WORLD_MIN_Y = TILE_WORLD_MIN_X
 export const TILE_WORLD_MAX_Y = TILE_WORLD_MAX_X
 
-export const TILE_WORLD_MAX_LAYERS = 8
+export const TILE_WORLD_MAX_LAYERS = 256
