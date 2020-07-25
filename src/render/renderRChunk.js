@@ -127,21 +127,20 @@ export function init (gl) {
 
 export function createTestTileIdTex (gl) {
   // fake tile id texture
-  const tileIdArr = new Uint8Array(
-    RCHUNK_LENGTH_IN_TILES * RCHUNK_LENGTH_IN_TILES * 4
+  const tileIdArr = new Uint16Array(
+    RCHUNK_LENGTH_IN_TILES * RCHUNK_LENGTH_IN_TILES
   )
-  // R,G == x,y coords of tile
-  // B,A == nothing atm.. later, special fx, probably
   for (let i = 0; i < RCHUNK_LENGTH_IN_TILES * RCHUNK_LENGTH_IN_TILES; i++) {
-    tileIdArr[4 * i] = i % 2
-    tileIdArr[4 * i + 1] = (i / RCHUNK_LENGTH_IN_TILES) % 2
-    tileIdArr[4 * i + 2] = 0
-    tileIdArr[4 * i + 3] = 0
+    const tileIdX = i % 2
+    const tileIdY = (i / RCHUNK_LENGTH_IN_TILES) % 2
+    tileIdArr[i] = tileIdX << 8 | tileIdY
   }
   return twgl.createTexture(gl, {
     auto: false,
     minMag: gl.NEAREST,
+    internalformat: gl.RGBA,
     format: gl.RGBA,
+    type: gl.UNSIGNED_SHORT_4_4_4_4,
     height: RCHUNK_LENGTH_IN_TILES,
     src: tileIdArr,
     width: RCHUNK_LENGTH_IN_TILES,

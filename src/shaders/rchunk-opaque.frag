@@ -9,7 +9,7 @@ precision mediump float;
 // ?? lowp ??
 uniform sampler2D uSpreadsheetTex;
 
-varying vec4 fsIn;  // 'extra' (.z,.w) usage TBD
+varying lowp vec4 fsIn;  // 'extra' (.z,.w) usage TBD
 
 void main() {
   // TODO: Switch to 16-bit image decoding! (32bit 'cutout' rgba for now...)

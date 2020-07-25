@@ -23,3 +23,5 @@ export const TILE_WORLD_X_OFFSET = (1 << 23) | 0
 
 export const TILE_WORLD_MIN_X = -TILE_WORLD_X_OFFSET
 export const TILE_WORLD_MAX_X = TILE_WORLD_X_OFFSET - 1
+
+export const TILE_WORLD_MAX_LAYERS = 8

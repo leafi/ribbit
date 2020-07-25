@@ -6,16 +6,16 @@ precision mediump float;
 /* src/shaders/rchunk.vert */
 /* ----------------------- */
 
-attribute mediump vec4 tileXYUV; // (tileIdxX, tileIdxY, subTileU, subTileV)
+attribute lowp vec4 tileXYUV; // (tileIdxX, tileIdxY, subTileU, subTileV)
 
-uniform mat4 uProjMtx;
-uniform vec4 uShove; // (base pos x, base pos y, depth, scale)
-uniform vec4 uConstants;
+uniform mediump mat4 uProjMtx;
+uniform mediump vec4 uShove; // (base pos x, base pos y, depth, scale)
+uniform mediump vec4 uConstants;
 
-uniform sampler2D uTileIdTex;
+uniform lowp sampler2D uTileIdTex;
 
 // VS -> FS
-varying mediump vec4 fsIn; // (.rg := uv, .ba := whatever)
+varying lowp vec4 fsIn; // (.rg := uv, .ba := whatever)
 
 const vec4 DEAD = vec4(-2000.0, -2000.0, 0.0, 1.0);
 
@@ -28,21 +28,24 @@ void main() {
   // reconstruct position data from tile info
   vec2 position = uTileLength * (tileXYUV.xy + tileXYUV.zw);
 
-  // R channel: sprite sheet tile X coord
-  // G channel: sprite sheet tile Y coord
-  // B channel: ?? extra data for pixel shader
-  // A channel: ?? extra data for pixel shader
-  vec4 tidData = texture2D(uTileIdTex, tileXYUV.xy * uInvRChunkLengthInTiles);
+  // packedTid is (tileX8 << 8 | tileY8) reinterpreted as 4x4bit normalized ints
+  // (Top bit of tileX8, tileY8 may be used by fragment shader.)
+  vec4 packedTid = 15.0 * texture2D(uTileIdTex, tileXYUV.xy * uInvRChunkLengthInTiles);
 
-  vec2 vsfsUV = (tidData.rg * 255.0 + tileXYUV.zw) * uInvTileLengthDivSheetLength;
-  fsIn = vec4(vsfsUV.x, vsfsUV.y, tidData.b, tidData.a);
+  // Reconstruct 7-bit tile X from low 3 bits of 4-bit .x, all of 4-bit .y
+  // Reconstruct 7-bit tile Y from low 3 bits of 4-bit .z, all of 4-bit .w
+  vec2 tileId = mod(packedTid.xz, 8.0) * 16.0 + packedTid.yw;
 
-  if (tidData.r + tidData.g > 2.0 * 254.5 / 255.0) {
+  vec2 vsfsUV = (tileId + tileXYUV.zw) * uInvTileLengthDivSheetLength;
+  fsIn = vec4(vsfsUV.x, vsfsUV.y, step(packedTid.r, 8.0), step(packedTid.b, 8.0));
+
+  if (tileId.x + tileId.y > 254.0) {
     // X ~= 255, Y ~= 255... => 'this tile is empty'
     // force off-screen
     gl_Position = vec4(-2000.0, -2000.0, -1.0, 1.0);
   } else {
     vec2 p = position * uShove.w + uShove.xy;
+    // TODO: eliminate matrix multiply? with some screen size info, we don't need it, y'know!
     gl_Position = uProjMtx * vec4(p.xy, uShove.z, 1.0);
   }
 }
