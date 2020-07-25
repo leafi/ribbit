@@ -4,7 +4,7 @@ import * as ortho from './ortho'
 import * as renderRChunk from './renderRChunk'
 import { initShadersAsync } from './shaders'
 import * as spritesheet from './spritesheet'
-// import * as tileIdTexCache from './tileIdTexCache'
+import * as tileIdTexCache from './tileIdTexCache'
 
 let _gfxCanvas
 let _gl
@@ -55,14 +55,14 @@ export async function initRender (gfxCanvas) {
 
   renderRChunk.init(gl)
 
-  // tileIdTexCache.init(gl)
+  tileIdTexCache.init(gl)
 
   const testTileIdTex = renderRChunk.createTestTileIdTex(gl)
 
   const rpaf = window.requestPostAnimationFrame || window.requestAnimationFrame
 
   const renderInside = t => {
-    // tileIdTexCache.resetUsedList()
+    tileIdTexCache.resetUsedList()
 
     ortho.viewport(gl)
 

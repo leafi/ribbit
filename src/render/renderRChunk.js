@@ -137,17 +137,16 @@ export function createTestTileIdTex (gl) {
   }
   return twgl.createTexture(gl, {
     auto: false,
-    minMag: gl.NEAREST,
-    internalformat: gl.RGBA,
     format: gl.RGBA,
-    type: gl.UNSIGNED_SHORT_4_4_4_4,
     height: RCHUNK_LENGTH_IN_TILES,
-    src: tileIdArr,
-    width: RCHUNK_LENGTH_IN_TILES,
-    target: gl.TEXTURE_2D,
     level: 0,
+    minMag: gl.NEAREST,
+    premultiplyAlpha: false,
+    src: tileIdArr,
+    target: gl.TEXTURE_2D,
+    type: gl.UNSIGNED_SHORT_4_4_4_4,
     unpackAlignment: 1,
-    premultiplyAlpha: false
+    width: RCHUNK_LENGTH_IN_TILES
   })
 }
 
